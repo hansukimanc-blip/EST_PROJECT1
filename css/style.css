@@ -38,7 +38,7 @@ a { color: inherit; text-decoration: none; }
 .header-inner { width: min(1160px, calc(100% - 40px)); height: 72px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
 .main-header-inner { justify-content: center; }
 .main-header-inner .main-nav { width: auto; margin: 0; justify-content: center; }
-.page-selection-label { display: flex; align-items: center; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.page-selection-label { display: flex; align-items: center; color: var(--accent); font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .brand { display: inline-flex; align-items: center; gap: 11px; }
 .brand-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; background: var(--primary); color: white; font-weight: 800; }
 .brand strong, .brand small { display: block; }
@@ -52,7 +52,7 @@ a { color: inherit; text-decoration: none; }
 .page-shell { width: min(1080px, calc(100% - 40px)); margin: 0 auto; padding: 52px 0 80px; }
 .intro { margin-bottom: 32px; }
 .intro.compact { margin-bottom: 32px; }
-.eyebrow, .section-label { margin: 0 0 8px; color: var(--accent); font-size: 11px; font-weight: 800; letter-spacing: .13em; }
+.eyebrow, .section-label { margin: 0 0 8px; color: var(--accent); font-size: 13.2px; font-weight: 800; letter-spacing: .13em; }
 .intro h1 { margin: 0; color: var(--primary); font-size: clamp(28px, 4vw, 38px); font-weight: 750; line-height: 1.3; letter-spacing: -.035em; }
 .intro > p:last-of-type { max-width: 710px; margin: 12px 0 0; color: var(--secondary); font-size: 15px; }
 .main-banner { margin-top: 24px; text-align: center; }
