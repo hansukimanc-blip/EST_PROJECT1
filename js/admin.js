@@ -11,10 +11,15 @@
   const uploadedFileName = document.getElementById("uploaded-file-name");
   const registeredBody = document.getElementById("registered-body");
   const registeredCount = document.getElementById("registered-count");
+  const deleteReportButton = document.getElementById("delete-report-button");
   const extraRows = [];
+  const selectedRowIds = new Set();
+  const deletedRowIds = new Set();
+  let nextRowId = 1;
 
-  function normalizeReport(report) {
+  function normalizeReport(report, rowId) {
     return {
+      rowId,
       date: report.auditDate || (report.year ? report.year + "-01-01" : "-"),
       department: report.department || "-",
       drafter: report.drafter || "-",
@@ -27,10 +32,13 @@
   }
 
   function renderRegistered() {
-    const allRows = [...extraRows, ...reports.map(normalizeReport)];
+    const savedRows = reports.map((report, index) => normalizeReport(report, `report-${report.id ?? index}`));
+    const allRows = [...extraRows, ...savedRows].filter((report) => !deletedRowIds.has(report.rowId));
     registeredCount.textContent = allRows.length + "건";
+    deleteReportButton.disabled = selectedRowIds.size === 0;
     registeredBody.innerHTML = allRows.map((report) => `
       <tr>
+        <td class="selection-column"><input class="report-select" type="checkbox" value="${window.escapeHtml(report.rowId)}" aria-label="${window.escapeHtml(report.fileName)} 선택"${selectedRowIds.has(report.rowId) ? " checked" : ""}></td>
         <td>${window.escapeHtml(report.date)}</td>
         <td>${window.escapeHtml(report.department)}</td>
         <td>${window.escapeHtml(report.drafter)}</td>
@@ -39,7 +47,7 @@
         <td><span class="table-content" title="${window.escapeHtml(report.content)}">${window.escapeHtml(report.content)}</span></td>
         <td><span class="table-file"><span>${window.escapeHtml(fileExtension(report.fileName))}</span><strong>${window.escapeHtml(report.fileName)}</strong></span></td>
         <td><span class="status-badge success">${window.escapeHtml(report.status)}</span></td>
-      </tr>`).join("");
+      </tr>`).join("") || `<tr><td class="empty-table-cell" colspan="9">등록된 감사보고서가 없습니다.</td></tr>`;
   }
 
   function setToday() {
@@ -97,6 +105,7 @@
 
     window.setTimeout(() => {
       extraRows.unshift({
+        rowId: `uploaded-${Date.now()}-${nextRowId++}`,
         date: formData.get("date"),
         department: formData.get("department").trim(),
         drafter: formData.get("drafter").trim(),
@@ -119,6 +128,23 @@
     setToday();
     resetFileSelection();
   }, 0));
+
+  registeredBody.addEventListener("change", (event) => {
+    const checkbox = event.target.closest(".report-select");
+    if (!checkbox) return;
+    if (checkbox.checked) selectedRowIds.add(checkbox.value);
+    else selectedRowIds.delete(checkbox.value);
+    deleteReportButton.disabled = selectedRowIds.size === 0;
+  });
+
+  deleteReportButton.addEventListener("click", () => {
+    if (!selectedRowIds.size) return;
+    if (!window.confirm("삭제하시겠습니까?")) return;
+    selectedRowIds.forEach((rowId) => deletedRowIds.add(rowId));
+    selectedRowIds.clear();
+    renderRegistered();
+    window.showToast("선택한 감사보고서가 삭제되었습니다.");
+  });
 
   setToday();
   renderRegistered();

@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="감사사례 검색서비스 로그인 및 회원가입">
+  <title>로그인 | 감사사례 검색서비스</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-page">
+  <main class="auth-page-shell">
+    <section class="auth-panel" aria-labelledby="auth-title">
+      <p class="eyebrow">AUDIT CASE SERVICE</p>
+      <h1 id="auth-title">감사사례 검색서비스</h1>
+      <p class="auth-description">서비스를 이용하려면 로그인하거나 새 계정을 만들어 주세요.</p>
+
+      <div class="auth-mode" role="tablist" aria-label="인증 방식">
+        <button id="login-mode-button" class="active" type="button" role="tab" aria-selected="true">로그인</button>
+        <button id="signup-mode-button" type="button" role="tab" aria-selected="false">회원가입</button>
+      </div>
+
+      <form id="auth-form" class="auth-form">
+        <div class="field">
+          <label for="auth-email">이메일</label>
+          <input id="auth-email" name="email" type="email" autocomplete="email" placeholder="name@example.com" required>
+        </div>
+        <div class="field">
+          <label for="auth-password">비밀번호</label>
+          <input id="auth-password" name="password" type="password" autocomplete="current-password" minlength="6" placeholder="6자 이상 입력해 주세요" required>
+        </div>
+        <div id="auth-message" class="auth-message" role="alert" aria-live="polite" hidden></div>
+        <button id="auth-submit-button" class="button button-primary auth-submit-button" type="submit">로그인</button>
+      </form>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/auth.js"></script>
+</body>
+</html>

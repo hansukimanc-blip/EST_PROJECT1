@@ -7,13 +7,14 @@
   <title>감사사례 검색서비스</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="auth-pending">
   <header class="site-header">
     <div class="header-inner main-header-inner">
       <nav class="main-nav" aria-label="주요 메뉴">
         <span class="page-selection-label">Page Selection</span>
         <a class="active" href="index.html" aria-current="page">감사사례 검색</a>
         <a href="admin.html">감사보고서 관리</a>
+        <button id="logout-button" class="header-logout-button" type="button" hidden>로그아웃</button>
       </nav>
     </div>
   </header>
@@ -91,8 +92,11 @@
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
   <footer><p>감사사례 검색서비스 · 정적 MVP</p></footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
   <script src="data/mock-data.js"></script>
   <script src="js/app.js"></script>
+  <script src="js/auth-session.js"></script>
   <script src="js/search.js"></script>
 </body>
 </html>
