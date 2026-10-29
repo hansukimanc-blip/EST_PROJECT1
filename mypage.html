@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="감사사례 검색서비스 사용자 정보와 활동 내역">
+  <title>My Page | 감사사례 검색서비스</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-pending">
+  <header class="site-header">
+    <div class="header-inner main-header-inner">
+      <nav class="main-nav" aria-label="주요 메뉴">
+        <span class="page-selection-label">Page Selection</span>
+        <a href="index.html">감사사례 검색</a>
+        <a href="admin.html">감사보고서 관리</a>
+        <a class="active" href="mypage.html" aria-current="page">My Page</a>
+        <button id="logout-button" class="header-logout-button" type="button" hidden>로그아웃</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell my-page-shell">
+    <section class="intro compact" aria-labelledby="my-page-title">
+      <p class="eyebrow">MY PAGE</p>
+      <h1 id="my-page-title">My Page</h1>
+    </section>
+
+    <section class="my-summary" aria-label="활동 요약">
+      <article class="summary-card"><span>최근 검색 건수</span><strong id="recent-search-count">0건</strong></article>
+      <article class="summary-card"><span>저장한 사례 건수</span><strong id="saved-report-count">0건</strong></article>
+      <article class="summary-card"><span>최근 로그인 일시</span><strong id="last-sign-in">-</strong></article>
+    </section>
+
+    <section class="my-section" aria-labelledby="profile-title">
+      <div class="panel-heading">
+        <div><p class="step-label">01</p><h2 id="profile-title">내 정보</h2></div>
+      </div>
+      <dl class="profile-list"><dt>이메일</dt><dd id="profile-email">-</dd></dl>
+    </section>
+
+    <section class="my-section" aria-labelledby="recent-search-title">
+      <div class="panel-heading">
+        <div><p class="step-label">02</p><h2 id="recent-search-title">최근 검색</h2></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>검색 키워드</th><th>검색일</th><th>AND/OR 방식</th><th>적용한 필터</th><th>다시 검색</th></tr></thead>
+          <tbody id="recent-search-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="my-section" aria-labelledby="saved-report-title">
+      <div class="panel-heading">
+        <div><p class="step-label">03</p><h2 id="saved-report-title">저장한 감사사례</h2></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>보고서명</th><th>감사연도</th><th>대상부서</th><th>감사유형</th><th>저장일</th><th>원본 HWP 열기</th><th>저장 해제</th></tr></thead>
+          <tbody id="saved-report-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer><p>감사사례 검색서비스 · 정적 MVP</p></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth-session.js"></script>
+  <script src="js/mypage.js"></script>
+</body>
+</html>

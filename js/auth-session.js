@@ -11,9 +11,11 @@
     window.location.replace("auth.html");
   }
 
-  function showAuthenticatedPage() {
+  function showAuthenticatedPage(session) {
+    window.auditCurrentUser = session.user;
     document.body.classList.remove("auth-pending");
     if (logoutButton) logoutButton.hidden = false;
+    window.dispatchEvent(new CustomEvent("audit-auth-ready", { detail: { user: session.user } }));
   }
 
   if (!authClient) {
@@ -39,12 +41,12 @@
   }
 
   authClient.auth.onAuthStateChange((event, session) => {
-    if (session) showAuthenticatedPage();
+    if (session) showAuthenticatedPage(session);
     else if (event === "SIGNED_OUT") goToLogin();
   });
 
   authClient.auth.getSession().then(({ data, error }) => {
     if (error || !data.session) goToLogin();
-    else showAuthenticatedPage();
+    else showAuthenticatedPage(data.session);
   }).catch(goToLogin);
 })();

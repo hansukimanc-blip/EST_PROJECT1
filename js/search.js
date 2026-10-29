@@ -32,6 +32,24 @@
     return [...new Set(value.split(/[\s,]+/).map((word) => word.trim()).filter(Boolean))];
   }
 
+  function userStorageKey(type, user) {
+    return `audit-${type}:${user.id}`;
+  }
+
+  function saveRecentSearch(searchData) {
+    const user = window.auditCurrentUser;
+    if (!user) return;
+    try {
+      const key = userStorageKey("recent-searches", user);
+      const stored = JSON.parse(window.localStorage.getItem(key) || "[]");
+      const searches = Array.isArray(stored) ? stored : [];
+      searches.unshift(searchData);
+      window.localStorage.setItem(key, JSON.stringify(searches));
+    } catch (_error) {
+      window.showToast("최근 검색 내역을 저장하지 못했습니다.");
+    }
+  }
+
   function highlight(text, keywords) {
     if (!keywords.length) return window.escapeHtml(text);
     const escapedWords = keywords.map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
@@ -118,6 +136,41 @@
     if (auditType) summaryParts.push(window.escapeHtml(auditType));
     searchSummary.innerHTML = summaryParts.length ? "적용 조건: " + summaryParts.join(" / ") : "전체 등록 보고서를 표시하고 있습니다.";
     searchSummary.hidden = false;
+
+    saveRecentSearch({
+      keywords: keywordInput.value.trim(),
+      searchedAt: new Date().toISOString(),
+      mode,
+      filters: {
+        yearFrom: yearFrom.value,
+        yearTo: yearTo.value,
+        department,
+        drafter,
+        auditType
+      }
+    });
+  }
+
+  function applyPendingSearch(user) {
+    try {
+      const key = userStorageKey("pending-search", user);
+      const value = window.localStorage.getItem(key);
+      if (!value) return;
+      window.localStorage.removeItem(key);
+      const pending = JSON.parse(value);
+      const filters = pending.filters || {};
+      keywordInput.value = pending.keywords || "";
+      yearFrom.value = filters.yearFrom || "";
+      yearTo.value = filters.yearTo || "";
+      departmentFilter.value = filters.department || "";
+      drafterFilter.value = filters.drafter || "";
+      typeFilter.value = filters.auditType || "";
+      const modeInput = form.querySelector(`input[name="search-mode"][value="${pending.mode === "or" ? "or" : "and"}"]`);
+      if (modeInput) modeInput.checked = true;
+      search();
+    } catch (_error) {
+      window.showToast("검색 조건을 불러오지 못했습니다.");
+    }
   }
 
   const years = uniqueValues("year");
@@ -126,6 +179,9 @@
   addOptions(departmentFilter, uniqueValues("department"), false);
   addOptions(drafterFilter, uniqueValues("drafter"), false);
   addOptions(typeFilter, uniqueValues("auditType"), false);
+
+  if (window.auditCurrentUser) applyPendingSearch(window.auditCurrentUser);
+  else window.addEventListener("audit-auth-ready", (event) => applyPendingSearch(event.detail.user), { once: true });
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
