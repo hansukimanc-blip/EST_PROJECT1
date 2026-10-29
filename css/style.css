@@ -38,6 +38,7 @@ a { color: inherit; text-decoration: none; }
 .header-inner { width: min(1160px, calc(100% - 40px)); height: 72px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
 .main-header-inner { justify-content: center; }
 .main-header-inner .main-nav { width: auto; margin: 0; justify-content: center; }
+.page-selection-label { display: flex; align-items: center; color: var(--accent); font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
 .brand { display: inline-flex; align-items: center; gap: 11px; }
 .brand-mark { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 8px; background: var(--primary); color: white; font-weight: 800; }
 .brand strong, .brand small { display: block; }
