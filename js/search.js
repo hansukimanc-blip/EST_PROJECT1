@@ -7,6 +7,7 @@
   const yearFrom = document.getElementById("year-from");
   const yearTo = document.getElementById("year-to");
   const departmentFilter = document.getElementById("department-filter");
+  const drafterFilter = document.getElementById("drafter-filter");
   const typeFilter = document.getElementById("type-filter");
   const resultCount = document.getElementById("result-count");
   const resultsList = document.getElementById("results-list");
@@ -54,7 +55,7 @@
       <article class="result-card">
         <div class="result-main">
           <div class="result-meta">
-            <span>${report.year}년</span><span>${window.escapeHtml(report.department)}</span><span>${window.escapeHtml(report.auditType)}</span>
+            <span>${report.year}년</span><span>${window.escapeHtml(report.department)}</span><span>기안자 ${window.escapeHtml(report.drafter)}</span><span>${window.escapeHtml(report.auditType)}</span>
           </div>
           <h3>${highlight(report.title, keywords)}</h3>
           <p class="file-name"><span aria-hidden="true">HWP</span>${highlight(report.fileName, keywords)}</p>
@@ -83,8 +84,9 @@
     const from = Number(yearFrom.value) || null;
     const to = Number(yearTo.value) || null;
     const department = departmentFilter.value;
+    const drafter = drafterFilter.value;
     const auditType = typeFilter.value;
-    const hasConditions = keywords.length || from || to || department || auditType;
+    const hasConditions = keywords.length || from || to || department || drafter || auditType;
 
     if (from && to && from > to) {
       window.showToast("시작 연도는 종료 연도보다 이전이어야 합니다.");
@@ -100,6 +102,7 @@
         && (!from || report.year >= from)
         && (!to || report.year <= to)
         && (!department || report.department === department)
+        && (!drafter || report.drafter === drafter)
         && (!auditType || report.auditType === auditType);
     });
 
@@ -111,6 +114,7 @@
     if (keywords.length) summaryParts.push(`<strong>${keywords.map(window.escapeHtml).join(", ")}</strong> · ${mode.toUpperCase()}`);
     if (from || to) summaryParts.push(`${from || "전체"} ~ ${to || "전체"}년`);
     if (department) summaryParts.push(window.escapeHtml(department));
+    if (drafter) summaryParts.push("기안자 " + window.escapeHtml(drafter));
     if (auditType) summaryParts.push(window.escapeHtml(auditType));
     searchSummary.innerHTML = summaryParts.length ? "적용 조건: " + summaryParts.join(" / ") : "전체 등록 보고서를 표시하고 있습니다.";
     searchSummary.hidden = false;
@@ -120,6 +124,7 @@
   addOptions(yearFrom, years, true);
   addOptions(yearTo, years, true);
   addOptions(departmentFilter, uniqueValues("department"), false);
+  addOptions(drafterFilter, uniqueValues("drafter"), false);
   addOptions(typeFilter, uniqueValues("auditType"), false);
 
   form.addEventListener("submit", (event) => {
