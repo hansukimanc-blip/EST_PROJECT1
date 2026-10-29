@@ -63,14 +63,21 @@
             <textarea id="report-content" name="content" rows="6" placeholder="감사 지적사항과 조치 내용을 입력해 주세요." required></textarea>
             <input id="report-file" name="reportFile" type="file" accept=".hwp,.hwpx,.doc,.docx,.pdf" hidden>
             <div class="report-file-upload">
-              <button id="register-button" class="button button-primary" type="button">감사보고서 등록</button>
+              <button id="upload-file-button" class="button button-secondary" type="button">감사보고서 파일 업로드</button>
               <p>HWP, HWPX, DOC, DOCX, PDF 파일을 등록할 수 있습니다.</p>
+            </div>
+            <div id="uploaded-file" class="uploaded-file" hidden>
+              <span id="uploaded-file-name"></span>
+              <strong>업로드 완료</strong>
             </div>
           </div>
         </div>
         <div class="upload-actions">
           <p>모든 항목을 입력하고 감사보고서 파일을 선택하면 검색 대상 목록에 반영됩니다.</p>
-          <button id="reset-form-button" class="button button-secondary" type="reset">초기화</button>
+          <div class="form-actions">
+            <button id="reset-form-button" class="button button-secondary" type="reset">초기화</button>
+            <button id="register-button" class="button button-primary" type="submit">감사보고서 등록</button>
+          </div>
         </div>
       </form>
     </section>

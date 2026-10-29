@@ -124,6 +124,9 @@ mark { padding: 1px 2px; border-radius: 2px; background: #DCEBFF; color: var(--p
 .form-actions { display: flex; gap: 9px; flex-shrink: 0; }
 .report-file-upload { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
 .report-file-upload p { margin: 0; color: var(--secondary); font-size: 11px; }
+.uploaded-file { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-top: 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); font-size: 12px; }
+.uploaded-file span { min-width: 0; overflow: hidden; color: var(--ink); text-overflow: ellipsis; white-space: nowrap; }
+.uploaded-file strong { flex-shrink: 0; color: var(--success); font-size: 10px; }
 .drop-zone { padding: 42px 20px; border: 1.5px dashed var(--line-strong); border-radius: 10px; background: #FBFCFE; text-align: center; transition: border-color .18s, background .18s; }
 .drop-zone.dragging { border-color: var(--accent); background: var(--accent-soft); }
 .file-icon { width: 55px; height: 62px; display: grid; place-items: center; margin: 0 auto 14px; border: 1px solid #D4E2F2; border-radius: 7px; background: var(--accent-soft); color: var(--primary); font-size: 12px; font-weight: 900; box-shadow: none; }

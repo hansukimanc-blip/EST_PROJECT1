@@ -5,7 +5,10 @@
   const form = document.getElementById("report-form");
   const dateInput = document.getElementById("report-date");
   const fileInput = document.getElementById("report-file");
+  const uploadFileButton = document.getElementById("upload-file-button");
   const registerButton = document.getElementById("register-button");
+  const uploadedFile = document.getElementById("uploaded-file");
+  const uploadedFileName = document.getElementById("uploaded-file-name");
   const registeredBody = document.getElementById("registered-body");
   const registeredCount = document.getElementById("registered-count");
   const extraRows = [];
@@ -52,8 +55,13 @@
     return /\.(hwp|hwpx|doc|docx|pdf)$/i.test(file.name);
   }
 
-  registerButton.addEventListener("click", () => {
-    if (!form.reportValidity()) return;
+  function resetFileSelection() {
+    uploadedFile.hidden = true;
+    uploadedFileName.textContent = "";
+    uploadFileButton.textContent = "감사보고서 파일 업로드";
+  }
+
+  uploadFileButton.addEventListener("click", () => {
     fileInput.click();
   });
 
@@ -62,10 +70,14 @@
     if (!file) return;
     if (!isAllowedFile(file)) {
       fileInput.value = "";
+      resetFileSelection();
       window.showToast("HWP, HWPX, DOC, DOCX, PDF 파일만 등록할 수 있습니다.");
       return;
     }
-    form.requestSubmit();
+    uploadedFileName.textContent = file.name;
+    uploadedFile.hidden = false;
+    uploadFileButton.textContent = "파일 다시 선택";
+    window.showToast("감사보고서 파일 업로드가 완료되었습니다.");
   });
 
   form.addEventListener("submit", (event) => {
@@ -79,7 +91,8 @@
     }
 
     registerButton.disabled = true;
-    registerButton.textContent = "업로드 중…";
+    uploadFileButton.disabled = true;
+    registerButton.textContent = "등록 중…";
     const formData = new FormData(form);
 
     window.setTimeout(() => {
@@ -95,14 +108,17 @@
       });
       renderRegistered();
       form.reset();
-      setToday();
+      uploadFileButton.disabled = false;
       registerButton.disabled = false;
       registerButton.textContent = "감사보고서 등록";
-      window.showToast("감사보고서 파일이 업로드되었습니다.");
+      window.showToast("감사보고서가 등록되었습니다.");
     }, 450);
   });
 
-  form.addEventListener("reset", () => window.setTimeout(setToday, 0));
+  form.addEventListener("reset", () => window.setTimeout(() => {
+    setToday();
+    resetFileSelection();
+  }, 0));
 
   setToday();
   renderRegistered();
