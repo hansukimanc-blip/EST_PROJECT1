@@ -53,7 +53,7 @@ a { color: inherit; text-decoration: none; }
 .intro h1 { margin: 0; color: var(--primary); font-size: clamp(28px, 4vw, 38px); font-weight: 750; line-height: 1.3; letter-spacing: -.035em; }
 .intro > p:last-of-type { max-width: 710px; margin: 12px 0 0; color: var(--secondary); font-size: 15px; }
 .main-banner { margin-top: 24px; text-align: center; }
-.main-banner img { width: calc(100% - 178px); height: auto; display: block; margin: 0 auto; border: 1px solid var(--line); border-radius: 10px; }
+.main-banner img { width: 100%; height: auto; display: block; margin: 0 auto; border: 1px solid var(--line); border-radius: 10px; }
 
 .search-panel, .upload-panel, .registered-section { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); box-shadow: var(--shadow); }
 .search-panel { padding: 30px; }
@@ -122,6 +122,8 @@ mark { padding: 1px 2px; border-radius: 2px; background: #DCEBFF; color: var(--p
 .report-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .report-content-field { grid-column: 1 / -1; }
 .form-actions { display: flex; gap: 9px; flex-shrink: 0; }
+.report-file-upload { display: flex; align-items: center; gap: 14px; margin-top: 14px; }
+.report-file-upload p { margin: 0; color: var(--secondary); font-size: 11px; }
 .drop-zone { padding: 42px 20px; border: 1.5px dashed var(--line-strong); border-radius: 10px; background: #FBFCFE; text-align: center; transition: border-color .18s, background .18s; }
 .drop-zone.dragging { border-color: var(--accent); background: var(--accent-soft); }
 .file-icon { width: 55px; height: 62px; display: grid; place-items: center; margin: 0 auto 14px; border: 1px solid #D4E2F2; border-radius: 7px; background: var(--accent-soft); color: var(--primary); font-size: 12px; font-weight: 900; box-shadow: none; }
@@ -181,7 +183,7 @@ footer p { margin: 0; }
   .main-nav a { font-size: 13px; }
   .intro h1 { font-size: 28px; }
   .main-banner { margin-top: 20px; }
-  .main-banner img { width: calc(100% - 40px); border-radius: 8px; }
+  .main-banner img { width: 100%; border-radius: 8px; }
   .search-panel, .upload-panel, .registered-section { padding: 20px; }
   .search-line { flex-direction: column; }
   .search-button { width: 100%; }
@@ -191,6 +193,8 @@ footer p { margin: 0; }
   .upload-actions { align-items: stretch; flex-direction: column; }
   .upload-actions .button { width: 100%; }
   .form-actions { flex-direction: column-reverse; }
+  .report-file-upload { align-items: stretch; flex-direction: column; }
+  .report-file-upload .button { width: 100%; }
   .file-status { display: none; }
 }
 
