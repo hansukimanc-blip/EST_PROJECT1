@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="감사보고서를 등록하고 검색 가능 상태를 확인하는 관리 화면">
+  <title>감사보고서 관리 | 감사사례 검색서비스</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="brand" href="index.html" aria-label="감사사례 검색서비스 홈">
+        <span class="brand-mark" aria-hidden="true">감</span>
+        <span><strong>감사사례 검색서비스</strong><small>내부감사 업무지원</small></span>
+      </a>
+      <nav class="main-nav" aria-label="주요 메뉴">
+        <a href="index.html">감사사례 검색</a>
+        <a class="active" href="admin.html" aria-current="page">감사보고서 관리</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="page-shell">
+    <section class="intro compact" aria-labelledby="page-title">
+      <p class="eyebrow">REPORT MANAGEMENT</p>
+      <h1 id="page-title">감사보고서 관리</h1>
+      <p>검색 대상으로 사용할 HWP 보고서를 선택하고 등록 상태를 확인합니다.</p>
+    </section>
+
+    <section class="upload-panel" aria-labelledby="upload-title">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">01</p>
+          <h2 id="upload-title">보고서 등록</h2>
+        </div>
+        <span class="mock-badge">Mock 업로드</span>
+      </div>
+      <div id="drop-zone" class="drop-zone">
+        <input id="file-input" type="file" accept=".hwp,.hwpx" multiple hidden>
+        <div class="file-icon" aria-hidden="true">HWP</div>
+        <h3>HWP 파일을 선택해 주세요</h3>
+        <p>여러 파일을 한 번에 선택할 수 있습니다.</p>
+        <button id="choose-file-button" class="button button-secondary" type="button">파일 선택</button>
+      </div>
+
+      <div id="selected-area" class="selected-area" hidden>
+        <div class="selected-title">
+          <h3>선택된 파일 <span id="selected-count">0</span></h3>
+          <button id="clear-files-button" class="text-button" type="button">전체 삭제</button>
+        </div>
+        <ul id="selected-files" class="selected-files"></ul>
+        <div class="upload-actions">
+          <p>실제 HWP 텍스트 추출은 추후 연계되며, 현재는 등록 흐름을 확인하는 Mock 기능입니다.</p>
+          <button id="upload-button" class="button button-primary" type="button">선택 파일 업로드</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="registered-section" aria-labelledby="registered-title">
+      <div class="panel-heading">
+        <div>
+          <p class="step-label">02</p>
+          <h2 id="registered-title">등록된 감사보고서 <span id="registered-count" class="count-pill">0건</span></h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>파일명</th><th>감사연도</th><th>등록 상태</th><th>등록일</th></tr></thead>
+          <tbody id="registered-body"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer><p>감사사례 검색서비스 · 정적 MVP</p></footer>
+
+  <script src="data/mock-data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
