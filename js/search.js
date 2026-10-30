@@ -68,15 +68,26 @@
     return `audit-${type}:${user.id}`;
   }
 
-  function saveRecentSearch(searchData) {
+  async function saveRecentSearch(searchData) {
     const user = window.auditCurrentUser;
-    if (!user) return;
+    if (!user || !supabaseClient) return;
     try {
-      const key = userStorageKey("recent-searches", user);
-      const stored = JSON.parse(window.localStorage.getItem(key) || "[]");
-      const searches = Array.isArray(stored) ? stored : [];
-      searches.unshift(searchData);
-      window.localStorage.setItem(key, JSON.stringify(searches));
+      const filters = searchData.filters || {};
+      const { error } = await supabaseClient
+        .from("recent_searches")
+        .insert({
+          user_id: user.id,
+          user_email: user.email || null,
+          keywords: searchData.keywords,
+          searched_at: searchData.searchedAt,
+          search_mode: searchData.mode,
+          year_from: filters.yearFrom ? Number(filters.yearFrom) : null,
+          year_to: filters.yearTo ? Number(filters.yearTo) : null,
+          department: filters.department || null,
+          drafter: filters.drafter || null,
+          audit_type: filters.auditType || null
+        });
+      if (error) throw error;
     } catch (_error) {
       window.showToast("최근 검색 내역을 저장하지 못했습니다.");
     }

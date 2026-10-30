@@ -15,25 +15,6 @@
     return `audit-${type}:${currentUser.id}`;
   }
 
-  function readStoredItems(type) {
-    try {
-      const value = JSON.parse(window.localStorage.getItem(storageKey(type)) || "[]");
-      return Array.isArray(value) ? value : [];
-    } catch (_error) {
-      return [];
-    }
-  }
-
-  function writeStoredItems(type, items) {
-    try {
-      window.localStorage.setItem(storageKey(type), JSON.stringify(items));
-      return true;
-    } catch (_error) {
-      window.showToast("목록을 저장하지 못했습니다.");
-      return false;
-    }
-  }
-
   function formatDate(value) {
     if (!value) return "-";
     const date = new Date(value);
@@ -83,15 +64,68 @@
       </tr>`).join("") || `<tr><td class="empty-table-cell" colspan="7">저장한 감사사례가 없습니다.</td></tr>`;
   }
 
-  function initialize(user) {
+  async function loadRecentSearches(user) {
+    const { data, error } = await window.auditSupabaseClient
+      .from("recent_searches")
+      .select("id, keywords, searched_at, search_mode, year_from, year_to, department, drafter, audit_type")
+      .eq("user_id", user.id)
+      .order("searched_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map((search) => ({
+      id: search.id,
+      keywords: search.keywords,
+      searchedAt: search.searched_at,
+      mode: search.search_mode,
+      filters: {
+        yearFrom: search.year_from == null ? "" : String(search.year_from),
+        yearTo: search.year_to == null ? "" : String(search.year_to),
+        department: search.department || "",
+        drafter: search.drafter || "",
+        auditType: search.audit_type || ""
+      }
+    }));
+  }
+
+  async function loadSavedReports(user) {
+    const { data, error } = await window.auditSupabaseClient
+      .from("saved_reports")
+      .select("id, report_id, saved_at, audit_reports (id, title, file_path, year, department, audit_type)")
+      .eq("user_id", user.id)
+      .order("saved_at", { ascending: false });
+    if (error) throw error;
+    return (data || []).map((savedReport) => ({
+      savedReportId: savedReport.id,
+      reportId: savedReport.report_id,
+      savedAt: savedReport.saved_at,
+      title: savedReport.audit_reports?.title || "-",
+      filePath: savedReport.audit_reports?.file_path || "",
+      year: savedReport.audit_reports?.year || null,
+      department: savedReport.audit_reports?.department || "-",
+      auditType: savedReport.audit_reports?.audit_type || "-"
+    }));
+  }
+
+  async function initialize(user) {
     if (!user || currentUser) return;
     currentUser = user;
     email.textContent = user.email || "-";
     lastSignIn.textContent = formatDate(user.last_sign_in_at);
-    recentSearches = readStoredItems("recent-searches");
-    savedReports = readStoredItems("saved-reports");
     renderRecentSearches();
     renderSavedReports();
+    if (!window.auditSupabaseClient) {
+      window.showToast("마이페이지 데이터를 불러오지 못했습니다.");
+      return;
+    }
+    try {
+      [recentSearches, savedReports] = await Promise.all([
+        loadRecentSearches(user),
+        loadSavedReports(user)
+      ]);
+      renderRecentSearches();
+      renderSavedReports();
+    } catch (_error) {
+      window.showToast("마이페이지 데이터를 불러오지 못했습니다.");
+    }
   }
 
   recentSearchBody.addEventListener("click", (event) => {
@@ -107,22 +141,34 @@
     }
   });
 
-  savedReportBody.addEventListener("click", (event) => {
+  savedReportBody.addEventListener("click", async (event) => {
     const openButton = event.target.closest(".open-saved-report-button");
     if (openButton) {
       const report = savedReports[Number(openButton.dataset.index)];
-      if (report) window.showToast(`Mock 원본 경로: ${report.filePath || "등록된 경로 없음"}`);
+      if (report) window.showToast(`원본 경로: ${report.filePath || "등록된 경로 없음"}`);
       return;
     }
 
     const unsaveButton = event.target.closest(".unsave-report-button");
-    if (!unsaveButton) return;
+    if (!unsaveButton || !currentUser || !window.auditSupabaseClient) return;
     const index = Number(unsaveButton.dataset.index);
-    const nextReports = savedReports.filter((_report, itemIndex) => itemIndex !== index);
-    if (!writeStoredItems("saved-reports", nextReports)) return;
-    savedReports = nextReports;
-    renderSavedReports();
-    window.showToast("감사사례 저장을 해제했습니다.");
+    const report = savedReports[index];
+    if (!report) return;
+    unsaveButton.disabled = true;
+    try {
+      const { error } = await window.auditSupabaseClient
+        .from("saved_reports")
+        .delete()
+        .eq("id", report.savedReportId)
+        .eq("user_id", currentUser.id);
+      if (error) throw error;
+      savedReports = savedReports.filter((_report, itemIndex) => itemIndex !== index);
+      renderSavedReports();
+      window.showToast("감사사례 저장을 해제했습니다.");
+    } catch (_error) {
+      unsaveButton.disabled = false;
+      window.showToast("감사사례 저장을 해제하지 못했습니다.");
+    }
   });
 
   if (window.auditCurrentUser) initialize(window.auditCurrentUser);
