@@ -3,7 +3,10 @@
 
   const authClient = window.auditSupabaseClient;
   const logoutButton = document.getElementById("logout-button");
+  const adminMenuItems = document.querySelectorAll("[data-admin-menu]");
+  const requiresAdmin = document.body.dataset.requireAdmin === "true";
   let redirecting = false;
+  let sessionSetupPromise = null;
 
   function goToLogin() {
     if (redirecting) return;
@@ -11,11 +14,48 @@
     window.location.replace("auth.html");
   }
 
-  function showAuthenticatedPage(session) {
-    window.auditCurrentUser = session.user;
-    document.body.classList.remove("auth-pending");
-    if (logoutButton) logoutButton.hidden = false;
-    window.dispatchEvent(new CustomEvent("audit-auth-ready", { detail: { user: session.user } }));
+  function goToUserPage() {
+    if (redirecting) return;
+    redirecting = true;
+    window.location.replace("index.html");
+  }
+
+  async function getUserRole(user) {
+    const { data, error } = await authClient
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .single();
+    if (error) throw error;
+    return data?.role === "admin" ? "admin" : "user";
+  }
+
+  async function showAuthenticatedPage(session) {
+    if (sessionSetupPromise) return sessionSetupPromise;
+    sessionSetupPromise = (async () => {
+      let role = "user";
+      try {
+        role = await getUserRole(session.user);
+      } catch (_error) {
+        if (requiresAdmin) {
+          goToUserPage();
+          return;
+        }
+      }
+
+      if (requiresAdmin && role !== "admin") {
+        goToUserPage();
+        return;
+      }
+
+      window.auditCurrentUser = session.user;
+      window.auditCurrentRole = role;
+      adminMenuItems.forEach((item) => { item.hidden = role !== "admin"; });
+      document.body.classList.remove("auth-pending");
+      if (logoutButton) logoutButton.hidden = false;
+      window.dispatchEvent(new CustomEvent("audit-auth-ready", { detail: { user: session.user, role } }));
+    })();
+    return sessionSetupPromise;
   }
 
   if (!authClient) {
