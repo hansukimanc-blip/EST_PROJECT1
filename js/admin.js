@@ -107,6 +107,34 @@
     console.error("code:", error.code);
   }
 
+  function registrationErrorMessage(error) {
+    const message = String(error?.message || "").toLocaleLowerCase();
+    const code = String(error?.code || "");
+    if (message.includes("bucket") && (message.includes("not found") || code === "404")) {
+      return "감사보고서 파일 저장소가 준비되지 않았습니다. 관리자에게 문의해 주세요.";
+    }
+    if (message.includes("row-level security") || message.includes("permission") || code === "42501") {
+      return "감사보고서 등록 권한이 없습니다. 관리자 권한을 확인해 주세요.";
+    }
+    if (code === "ADMIN_ROLE_REQUIRED") {
+      return "관리자 권한을 확인할 수 없습니다. 다시 로그인해 주세요.";
+    }
+    return "감사보고서를 등록하지 못했습니다. 다시 시도해 주세요.";
+  }
+
+  async function verifyDatabaseAdmin() {
+    const { data, error } = await supabaseClient.rpc("is_admin");
+    if (error) {
+      logSupabaseError("관리자 DB 권한 확인 실패:", error);
+      throw error;
+    }
+    if (data !== true) {
+      const roleError = new Error("현재 사용자는 DB에서 관리자로 확인되지 않았습니다.");
+      roleError.code = "ADMIN_ROLE_REQUIRED";
+      throw roleError;
+    }
+  }
+
   function storagePathForFile(file, user) {
     const extension = fileExtension(file.name).toLocaleLowerCase();
     const randomId = window.crypto?.randomUUID
@@ -215,6 +243,7 @@
 
     try {
       if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+      await verifyDatabaseAdmin();
       uploadedFilePath = await uploadReportFile(file, currentUser);
       console.log("4. Storage path 확보:", uploadedFilePath || "첨부 파일 없음");
 
@@ -251,7 +280,7 @@
     } catch (error) {
       console.error("감사보고서 등록 실패:", error);
       await removeUploadedFile(uploadedFilePath);
-      window.showToast("감사보고서를 등록하지 못했습니다. 다시 시도해 주세요.");
+      window.showToast(registrationErrorMessage(error));
     } finally {
       uploadFileButton.disabled = false;
       registerButton.disabled = false;
