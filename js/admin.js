@@ -14,10 +14,7 @@
   const registeredBody = document.getElementById("registered-body");
   const registeredCount = document.getElementById("registered-count");
   const deleteReportButton = document.getElementById("delete-report-button");
-  const extraRows = [];
-  const selectedRowIds = new Set();
-  const deletedRowIds = new Set();
-  let nextRowId = 1;
+  const selectedReportIds = new Set();
 
   function mapReport(report) {
     return {
@@ -59,13 +56,12 @@
   }
 
   function renderRegistered() {
-    const savedRows = reports.map((report, index) => normalizeReport(report, `report-${report.id ?? index}`));
-    const allRows = [...extraRows, ...savedRows].filter((report) => !deletedRowIds.has(report.rowId));
+    const allRows = reports.map((report) => normalizeReport(report, String(report.id)));
     registeredCount.textContent = allRows.length + "건";
-    deleteReportButton.disabled = selectedRowIds.size === 0;
+    deleteReportButton.disabled = selectedReportIds.size === 0;
     registeredBody.innerHTML = allRows.map((report) => `
       <tr>
-        <td class="selection-column"><input class="report-select" type="checkbox" value="${window.escapeHtml(report.rowId)}" aria-label="${window.escapeHtml(report.fileName)} 선택"${selectedRowIds.has(report.rowId) ? " checked" : ""}></td>
+        <td class="selection-column"><input class="report-select" type="checkbox" value="${window.escapeHtml(report.rowId)}" aria-label="${window.escapeHtml(report.fileName)} 선택"${selectedReportIds.has(report.rowId) ? " checked" : ""}></td>
         <td>${window.escapeHtml(report.date)}</td>
         <td>${window.escapeHtml(report.department)}</td>
         <td>${window.escapeHtml(report.drafter)}</td>
@@ -101,6 +97,13 @@
     return /\.(hwp|hwpx|doc|docx|pdf)$/i.test(file.name);
   }
 
+  function reportTitleFromFileName(fileName) {
+    return String(fileName)
+      .replace(/\.[^.]+$/, "")
+      .replace(/[_-]+/g, " ")
+      .trim();
+  }
+
   function resetFileSelection() {
     uploadedFile.hidden = true;
     uploadedFileName.textContent = "";
@@ -126,7 +129,7 @@
     window.showToast("감사보고서 파일 업로드가 완료되었습니다.");
   });
 
-  form.addEventListener("submit", (event) => {
+  form.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (!form.reportValidity()) return;
 
@@ -141,25 +144,41 @@
     registerButton.textContent = "등록 중…";
     const formData = new FormData(form);
 
-    window.setTimeout(() => {
-      extraRows.unshift({
-        rowId: `uploaded-${Date.now()}-${nextRowId++}`,
-        date: formData.get("date"),
-        department: formData.get("department").trim(),
-        drafter: formData.get("drafter").trim(),
-        auditType: formData.get("auditType").trim(),
-        discipline: formData.get("discipline").trim(),
-        content: formData.get("content").trim(),
-        fileName: file.name,
-        status: "등록 완료"
-      });
+    const auditDate = String(formData.get("date"));
+    const reportData = {
+      title: reportTitleFromFileName(file.name),
+      file_name: file.name,
+      file_path: file.name,
+      year: Number(auditDate.slice(0, 4)),
+      department: String(formData.get("department")).trim(),
+      drafter: String(formData.get("drafter")).trim(),
+      audit_type: String(formData.get("auditType")).trim(),
+      audit_date: auditDate,
+      discipline: String(formData.get("discipline")).trim(),
+      content: String(formData.get("content")).trim(),
+      status: "등록 완료"
+    };
+
+    try {
+      if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+      const { data, error } = await supabaseClient
+        .from("audit_reports")
+        .insert(reportData)
+        .select("id, file_name, year, department, drafter, audit_type, audit_date, discipline, content, status")
+        .single();
+      if (error) throw error;
+
+      reports.unshift(mapReport(data));
       renderRegistered();
       form.reset();
+      window.showToast("감사보고서가 등록되었습니다.");
+    } catch (_error) {
+      window.showToast("감사보고서를 등록하지 못했습니다. 다시 시도해 주세요.");
+    } finally {
       uploadFileButton.disabled = false;
       registerButton.disabled = false;
       registerButton.textContent = "감사보고서 등록";
-      window.showToast("감사보고서가 등록되었습니다.");
-    }, 450);
+    }
   });
 
   form.addEventListener("reset", () => window.setTimeout(() => {
@@ -170,18 +189,34 @@
   registeredBody.addEventListener("change", (event) => {
     const checkbox = event.target.closest(".report-select");
     if (!checkbox) return;
-    if (checkbox.checked) selectedRowIds.add(checkbox.value);
-    else selectedRowIds.delete(checkbox.value);
-    deleteReportButton.disabled = selectedRowIds.size === 0;
+    if (checkbox.checked) selectedReportIds.add(checkbox.value);
+    else selectedReportIds.delete(checkbox.value);
+    deleteReportButton.disabled = selectedReportIds.size === 0;
   });
 
-  deleteReportButton.addEventListener("click", () => {
-    if (!selectedRowIds.size) return;
+  deleteReportButton.addEventListener("click", async () => {
+    if (!selectedReportIds.size) return;
     if (!window.confirm("삭제하시겠습니까?")) return;
-    selectedRowIds.forEach((rowId) => deletedRowIds.add(rowId));
-    selectedRowIds.clear();
-    renderRegistered();
-    window.showToast("선택한 감사보고서가 삭제되었습니다.");
+
+    deleteReportButton.disabled = true;
+    const idsToDelete = [...selectedReportIds].map(Number);
+    try {
+      if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+      const { error } = await supabaseClient
+        .from("audit_reports")
+        .delete()
+        .in("id", idsToDelete);
+      if (error) throw error;
+
+      const deletedIds = new Set(idsToDelete);
+      reports = reports.filter((report) => !deletedIds.has(Number(report.id)));
+      selectedReportIds.clear();
+      renderRegistered();
+      window.showToast("선택한 감사보고서가 삭제되었습니다.");
+    } catch (_error) {
+      deleteReportButton.disabled = false;
+      window.showToast("감사보고서를 삭제하지 못했습니다. 다시 시도해 주세요.");
+    }
   });
 
   setToday();
