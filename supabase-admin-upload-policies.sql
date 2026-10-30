@@ -71,10 +71,11 @@ using (
   and (select public.is_admin())
 );
 
--- Data API와 Storage API에서 필요한 최소 테이블 권한입니다.
-grant usage on schema public, storage to authenticated;
+-- Data API에서 감사보고서를 등록하는 데 필요한 최소 권한입니다.
+-- storage.objects는 Supabase가 기본 권한을 관리하므로 직접 GRANT하지 않고
+-- 위 RLS 정책만으로 접근 범위를 제한합니다.
+grant usage on schema public to authenticated;
 grant select, insert, delete on table public.audit_reports to authenticated;
 grant usage on sequence public.audit_reports_id_seq to authenticated;
-grant select, insert, delete on table storage.objects to authenticated;
 
 commit;

@@ -110,6 +110,13 @@
   function registrationErrorMessage(error) {
     const message = String(error?.message || "").toLocaleLowerCase();
     const code = String(error?.code || "");
+    const detail = String(error?.message || "알 수 없는 오류").slice(0, 160);
+    if (error?.registrationStage === "storage") {
+      return `파일 업로드 실패: ${detail}`;
+    }
+    if (error?.registrationStage === "database") {
+      return `DB 등록 실패: ${detail}`;
+    }
     if (message.includes("bucket") && (message.includes("not found") || code === "404")) {
       return "감사보고서 파일 저장소가 준비되지 않았습니다. 관리자에게 문의해 주세요.";
     }
@@ -120,19 +127,6 @@
       return "관리자 권한을 확인할 수 없습니다. 다시 로그인해 주세요.";
     }
     return "감사보고서를 등록하지 못했습니다. 다시 시도해 주세요.";
-  }
-
-  async function verifyDatabaseAdmin() {
-    const { data, error } = await supabaseClient.rpc("is_admin");
-    if (error) {
-      logSupabaseError("관리자 DB 권한 확인 실패:", error);
-      throw error;
-    }
-    if (data !== true) {
-      const roleError = new Error("현재 사용자는 DB에서 관리자로 확인되지 않았습니다.");
-      roleError.code = "ADMIN_ROLE_REQUIRED";
-      throw roleError;
-    }
   }
 
   function storagePathForFile(file, user) {
@@ -243,8 +237,12 @@
 
     try {
       if (!supabaseClient) throw new Error("Supabase client is unavailable.");
-      await verifyDatabaseAdmin();
-      uploadedFilePath = await uploadReportFile(file, currentUser);
+      try {
+        uploadedFilePath = await uploadReportFile(file, currentUser);
+      } catch (error) {
+        error.registrationStage = "storage";
+        throw error;
+      }
       console.log("4. Storage path 확보:", uploadedFilePath || "첨부 파일 없음");
 
       const reportData = {
@@ -268,6 +266,7 @@
         .select("id, title, file_name, file_path, year, department, drafter, audit_type, audit_date, discipline, content, status")
         .single();
       if (error) {
+        error.registrationStage = "database";
         logSupabaseError("감사보고서 DB INSERT 실패:", error);
         throw error;
       }
