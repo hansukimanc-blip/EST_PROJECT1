@@ -26,11 +26,22 @@ values ('audit-reports', 'audit-reports', false)
 on conflict (id) do update set public = false;
 
 -- 기존 정책이 있다면 같은 이름의 정책만 안전하게 다시 만듭니다.
+alter table public.audit_reports enable row level security;
+
+drop policy if exists "audit_reports_authenticated_select" on public.audit_reports;
 drop policy if exists "audit_reports_admin_insert" on public.audit_reports;
 drop policy if exists "audit_reports_admin_delete" on public.audit_reports;
 drop policy if exists "audit_report_files_authenticated_select" on storage.objects;
 drop policy if exists "audit_report_files_admin_insert" on storage.objects;
 drop policy if exists "audit_report_files_admin_delete" on storage.objects;
+
+-- 로그인 사용자는 공용 감사보고서 전체를 조회할 수 있습니다.
+-- INSERT 후 반환된 행을 화면에 표시할 때도 이 정책이 필요합니다.
+create policy "audit_reports_authenticated_select"
+on public.audit_reports
+for select
+to authenticated
+using (true);
 
 -- 공용 보고서 정보는 관리자만 등록하고 삭제할 수 있습니다.
 create policy "audit_reports_admin_insert"
