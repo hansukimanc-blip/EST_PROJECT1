@@ -104,6 +104,11 @@
       .trim();
   }
 
+  function reportTitle(file, auditDate, department, auditType) {
+    if (file) return reportTitleFromFileName(file.name);
+    return `${auditDate.slice(0, 4)}년 ${department} ${auditType} 보고서`;
+  }
+
   function resetFileSelection() {
     uploadedFile.hidden = true;
     uploadedFileName.textContent = "";
@@ -134,8 +139,8 @@
     if (!form.reportValidity()) return;
 
     const file = fileInput.files[0];
-    if (!file || !isAllowedFile(file)) {
-      window.showToast("등록할 감사보고서 파일을 선택해 주세요.");
+    if (file && !isAllowedFile(file)) {
+      window.showToast("HWP, HWPX, DOC, DOCX, PDF 파일만 등록할 수 있습니다.");
       return;
     }
 
@@ -145,14 +150,16 @@
     const formData = new FormData(form);
 
     const auditDate = String(formData.get("date"));
+    const department = String(formData.get("department")).trim();
+    const auditType = String(formData.get("auditType")).trim();
     const reportData = {
-      title: reportTitleFromFileName(file.name),
-      file_name: file.name,
-      file_path: file.name,
+      title: reportTitle(file, auditDate, department, auditType),
+      file_name: file?.name || "",
+      file_path: file?.name || "",
       year: Number(auditDate.slice(0, 4)),
-      department: String(formData.get("department")).trim(),
+      department,
       drafter: String(formData.get("drafter")).trim(),
-      audit_type: String(formData.get("auditType")).trim(),
+      audit_type: auditType,
       audit_date: auditDate,
       discipline: String(formData.get("discipline")).trim(),
       content: String(formData.get("content")).trim(),
