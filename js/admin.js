@@ -2,6 +2,7 @@
   "use strict";
 
   const supabaseClient = window.auditSupabaseClient;
+  const reportFilesBucket = "audit-reports";
   let reports = [];
   let reportLoadFailed = false;
   const form = document.getElementById("report-form");
@@ -97,6 +98,53 @@
     return /\.(hwp|hwpx|doc|docx|pdf)$/i.test(file.name);
   }
 
+  function logSupabaseError(label, error) {
+    console.error(label, error);
+    if (!error) return;
+    console.error("message:", error.message);
+    console.error("details:", error.details);
+    console.error("hint:", error.hint);
+    console.error("code:", error.code);
+  }
+
+  function storagePathForFile(file, user) {
+    const extension = fileExtension(file.name).toLocaleLowerCase();
+    const randomId = window.crypto?.randomUUID
+      ? window.crypto.randomUUID()
+      : Math.random().toString(36).slice(2);
+    const year = new Intl.DateTimeFormat("en", {
+      timeZone: "Asia/Seoul",
+      year: "numeric"
+    }).format(new Date());
+    return `${user.id}/${year}/${Date.now()}-${randomId}.${extension}`;
+  }
+
+  async function uploadReportFile(file, user) {
+    if (!file) return "";
+    const objectPath = storagePathForFile(file, user);
+    const { data, error } = await supabaseClient.storage
+      .from(reportFilesBucket)
+      .upload(objectPath, file, {
+        cacheControl: "3600",
+        contentType: file.type || "application/octet-stream",
+        upsert: false
+      });
+    if (error) {
+      logSupabaseError("감사보고서 Storage 업로드 실패:", error);
+      throw error;
+    }
+    console.log("3. Storage 업로드 완료:", data);
+    return data.path;
+  }
+
+  async function removeUploadedFile(objectPath) {
+    if (!objectPath) return;
+    const { error } = await supabaseClient.storage
+      .from(reportFilesBucket)
+      .remove([objectPath]);
+    if (error) logSupabaseError("DB 저장 실패 후 Storage 파일 정리 실패:", error);
+  }
+
   function reportTitleFromFileName(fileName) {
     return String(fileName)
       .replace(/\.[^.]+$/, "")
@@ -131,7 +179,7 @@
     uploadedFileName.textContent = file.name;
     uploadedFile.hidden = false;
     uploadFileButton.textContent = "파일 다시 선택";
-    window.showToast("감사보고서 파일 업로드가 완료되었습니다.");
+    window.showToast("감사보고서 파일이 선택되었습니다.");
   });
 
   form.addEventListener("submit", async (event) => {
@@ -144,6 +192,17 @@
       return;
     }
 
+    const currentUser = window.auditCurrentUser;
+    const currentRole = window.auditCurrentRole;
+    if (!currentUser || currentRole !== "admin") {
+      console.error("감사보고서 등록 실패: 관리자 로그인 정보를 확인할 수 없습니다.");
+      window.showToast("관리자 권한을 확인할 수 없습니다. 다시 로그인해 주세요.");
+      return;
+    }
+
+    console.log("1. 입력값 확인 완료");
+    console.log("2. 선택한 파일:", file || "첨부 파일 없음");
+
     registerButton.disabled = true;
     uploadFileButton.disabled = true;
     registerButton.textContent = "등록 중…";
@@ -152,34 +211,46 @@
     const auditDate = String(formData.get("date"));
     const department = String(formData.get("department")).trim();
     const auditType = String(formData.get("auditType")).trim();
-    const reportData = {
-      title: reportTitle(file, auditDate, department, auditType),
-      file_name: file?.name || "",
-      file_path: file?.name || "",
-      year: Number(auditDate.slice(0, 4)),
-      department,
-      drafter: String(formData.get("drafter")).trim(),
-      audit_type: auditType,
-      audit_date: auditDate,
-      discipline: String(formData.get("discipline")).trim(),
-      content: String(formData.get("content")).trim(),
-      status: "등록 완료"
-    };
+    let uploadedFilePath = "";
 
     try {
       if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+      uploadedFilePath = await uploadReportFile(file, currentUser);
+      console.log("4. Storage path 확보:", uploadedFilePath || "첨부 파일 없음");
+
+      const reportData = {
+        title: reportTitle(file, auditDate, department, auditType),
+        file_name: file?.name || "",
+        file_path: uploadedFilePath,
+        year: Number(auditDate.slice(0, 4)),
+        department,
+        drafter: String(formData.get("drafter")).trim(),
+        audit_type: auditType,
+        audit_date: auditDate,
+        discipline: String(formData.get("discipline")).trim(),
+        content: String(formData.get("content")).trim(),
+        status: "등록 완료"
+      };
+
+      console.log("5. DB 저장 시작:", reportData);
       const { data, error } = await supabaseClient
         .from("audit_reports")
         .insert(reportData)
-        .select("id, file_name, year, department, drafter, audit_type, audit_date, discipline, content, status")
+        .select("id, title, file_name, file_path, year, department, drafter, audit_type, audit_date, discipline, content, status")
         .single();
-      if (error) throw error;
+      if (error) {
+        logSupabaseError("감사보고서 DB INSERT 실패:", error);
+        throw error;
+      }
 
+      console.log("6. DB 저장 완료:", data);
       reports.unshift(mapReport(data));
       renderRegistered();
       form.reset();
       window.showToast("감사보고서가 등록되었습니다.");
-    } catch (_error) {
+    } catch (error) {
+      console.error("감사보고서 등록 실패:", error);
+      await removeUploadedFile(uploadedFilePath);
       window.showToast("감사보고서를 등록하지 못했습니다. 다시 시도해 주세요.");
     } finally {
       uploadFileButton.disabled = false;
@@ -213,14 +284,18 @@
         .from("audit_reports")
         .delete()
         .in("id", idsToDelete);
-      if (error) throw error;
+      if (error) {
+        logSupabaseError("감사보고서 DB DELETE 실패:", error);
+        throw error;
+      }
 
       const deletedIds = new Set(idsToDelete);
       reports = reports.filter((report) => !deletedIds.has(Number(report.id)));
       selectedReportIds.clear();
       renderRegistered();
       window.showToast("선택한 감사보고서가 삭제되었습니다.");
-    } catch (_error) {
+    } catch (error) {
+      console.error("감사보고서 삭제 실패:", error);
       deleteReportButton.disabled = false;
       window.showToast("감사보고서를 삭제하지 못했습니다. 다시 시도해 주세요.");
     }
