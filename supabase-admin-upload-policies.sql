@@ -52,6 +52,7 @@ using (
 );
 
 -- Data API와 Storage API에서 필요한 최소 테이블 권한입니다.
+grant execute on function public.is_admin() to authenticated;
 grant select, insert, delete on table public.audit_reports to authenticated;
 grant select, insert, delete on table storage.objects to authenticated;
 
