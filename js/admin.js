@@ -1,7 +1,9 @@
 (function () {
   "use strict";
 
-  const reports = window.mockReports || [];
+  const supabaseClient = window.auditSupabaseClient;
+  let reports = [];
+  let reportLoadFailed = false;
   const form = document.getElementById("report-form");
   const dateInput = document.getElementById("report-date");
   const fileInput = document.getElementById("report-file");
@@ -16,6 +18,31 @@
   const selectedRowIds = new Set();
   const deletedRowIds = new Set();
   let nextRowId = 1;
+
+  function mapReport(report) {
+    return {
+      id: report.id,
+      fileName: report.file_name,
+      year: report.year,
+      department: report.department,
+      drafter: report.drafter,
+      auditType: report.audit_type,
+      auditDate: report.audit_date,
+      discipline: report.discipline,
+      content: report.content,
+      status: report.status
+    };
+  }
+
+  async function loadReports() {
+    if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+    const { data, error } = await supabaseClient
+      .from("audit_reports")
+      .select("id, file_name, year, department, drafter, audit_type, audit_date, discipline, content, status")
+      .order("audit_date", { ascending: false });
+    if (error) throw error;
+    reports = (data || []).map(mapReport);
+  }
 
   function normalizeReport(report, rowId) {
     return {
@@ -47,7 +74,18 @@
         <td><span class="table-content" title="${window.escapeHtml(report.content)}">${window.escapeHtml(report.content)}</span></td>
         <td><span class="table-file"><span>${window.escapeHtml(fileExtension(report.fileName))}</span><strong>${window.escapeHtml(report.fileName)}</strong></span></td>
         <td><span class="status-badge success">${window.escapeHtml(report.status)}</span></td>
-      </tr>`).join("") || `<tr><td class="empty-table-cell" colspan="9">등록된 감사보고서가 없습니다.</td></tr>`;
+      </tr>`).join("") || `<tr><td class="empty-table-cell" colspan="9">${reportLoadFailed ? "감사보고서를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요." : "등록된 감사보고서가 없습니다."}</td></tr>`;
+  }
+
+  async function initializeReports() {
+    try {
+      await loadReports();
+      renderRegistered();
+    } catch (_error) {
+      reportLoadFailed = true;
+      renderRegistered();
+      window.showToast("감사보고서 목록을 불러오지 못했습니다.");
+    }
   }
 
   function setToday() {
@@ -148,4 +186,6 @@
 
   setToday();
   renderRegistered();
+  if (window.auditCurrentUser) initializeReports();
+  else window.addEventListener("audit-auth-ready", initializeReports, { once: true });
 })();

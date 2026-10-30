@@ -1,7 +1,10 @@
 (function () {
   "use strict";
 
-  const reports = window.mockReports || [];
+  const supabaseClient = window.auditSupabaseClient;
+  let reports = [];
+  let reportsLoaded = false;
+  let reportLoadFailed = false;
   const form = document.getElementById("search-form");
   const keywordInput = document.getElementById("keyword-input");
   const yearFrom = document.getElementById("year-from");
@@ -26,6 +29,35 @@
       option.textContent = value + (typeof value === "number" ? "년" : "");
       select.appendChild(option);
     });
+  }
+
+  function mapReport(report) {
+    return {
+      id: report.id,
+      title: report.title,
+      fileName: report.file_name,
+      year: report.year,
+      department: report.department,
+      drafter: report.drafter,
+      auditType: report.audit_type,
+      auditDate: report.audit_date,
+      discipline: report.discipline,
+      registeredAt: report.registered_at,
+      status: report.status,
+      content: report.content,
+      filePath: report.file_path
+    };
+  }
+
+  async function loadReports() {
+    if (!supabaseClient) throw new Error("Supabase client is unavailable.");
+    const { data, error } = await supabaseClient
+      .from("audit_reports")
+      .select("id, title, file_name, file_path, year, department, drafter, audit_type, audit_date, discipline, content, registered_at, status")
+      .order("audit_date", { ascending: false });
+    if (error) throw error;
+    reports = (data || []).map(mapReport);
+    reportsLoaded = true;
   }
 
   function parseKeywords(value) {
@@ -84,6 +116,20 @@
   }
 
   function renderEmpty(hasConditions) {
+    const title = reportLoadFailed
+      ? "감사보고서를 불러오지 못했습니다"
+      : reportsLoaded && !reports.length
+        ? "등록된 감사보고서가 없습니다"
+        : hasConditions
+          ? "조건에 맞는 감사사례가 없습니다"
+          : "검색할 키워드나 조건을 입력해 주세요";
+    const description = reportLoadFailed
+      ? "잠시 후 페이지를 새로고침해 다시 시도해 주세요."
+      : reportsLoaded && !reports.length
+        ? "감사보고서가 등록되면 검색 결과가 표시됩니다."
+        : hasConditions
+          ? "키워드 또는 필터 조건을 변경해 다시 검색해 보세요."
+          : "등록된 모든 보고서에서 관련 사례를 찾아드립니다.";
     resultCount.textContent = "0건";
     resultsList.innerHTML = `
       <div class="empty-state">
@@ -91,8 +137,8 @@
           <rect x="28" y="12" width="64" height="68" rx="7"/><path d="M42 33h36M42 47h29M42 61h20"/>
           <circle cx="86" cy="67" r="16"/><path d="m97 78 10 9"/>
         </svg>
-        <h3>${hasConditions ? "조건에 맞는 감사사례가 없습니다" : "검색할 키워드나 조건을 입력해 주세요"}</h3>
-        <p>${hasConditions ? "키워드 또는 필터 조건을 변경해 다시 검색해 보세요." : "등록된 모든 보고서에서 관련 사례를 찾아드립니다."}</p>
+        <h3>${title}</h3>
+        <p>${description}</p>
       </div>`;
   }
 
@@ -155,7 +201,7 @@
     try {
       const key = userStorageKey("pending-search", user);
       const value = window.localStorage.getItem(key);
-      if (!value) return;
+      if (!value) return false;
       window.localStorage.removeItem(key);
       const pending = JSON.parse(value);
       const filters = pending.filters || {};
@@ -168,20 +214,33 @@
       const modeInput = form.querySelector(`input[name="search-mode"][value="${pending.mode === "or" ? "or" : "and"}"]`);
       if (modeInput) modeInput.checked = true;
       search();
+      return true;
     } catch (_error) {
       window.showToast("검색 조건을 불러오지 못했습니다.");
+      return false;
     }
   }
 
-  const years = uniqueValues("year");
-  addOptions(yearFrom, years, true);
-  addOptions(yearTo, years, true);
-  addOptions(departmentFilter, uniqueValues("department"), false);
-  addOptions(drafterFilter, uniqueValues("drafter"), false);
-  addOptions(typeFilter, uniqueValues("auditType"), false);
+  async function initialize(user) {
+    try {
+      await loadReports();
+      const years = uniqueValues("year");
+      addOptions(yearFrom, years, true);
+      addOptions(yearTo, years, true);
+      addOptions(departmentFilter, uniqueValues("department"), false);
+      addOptions(drafterFilter, uniqueValues("drafter"), false);
+      addOptions(typeFilter, uniqueValues("auditType"), false);
+      const pendingSearchApplied = reports.length && applyPendingSearch(user);
+      if (!pendingSearchApplied) renderEmpty(false);
+    } catch (_error) {
+      reportLoadFailed = true;
+      renderEmpty(false);
+      window.showToast("감사보고서 목록을 불러오지 못했습니다.");
+    }
+  }
 
-  if (window.auditCurrentUser) applyPendingSearch(window.auditCurrentUser);
-  else window.addEventListener("audit-auth-ready", (event) => applyPendingSearch(event.detail.user), { once: true });
+  if (window.auditCurrentUser) initialize(window.auditCurrentUser);
+  else window.addEventListener("audit-auth-ready", (event) => initialize(event.detail.user), { once: true });
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -199,7 +258,7 @@
     const button = event.target.closest(".original-button");
     if (!button) return;
     const report = reports.find((item) => item.id === Number(button.dataset.id));
-    window.showToast(`Mock 원본 경로: ${report.filePath}`);
+    window.showToast(`원본 경로: ${report.filePath}`);
   });
 
   renderEmpty(false);
