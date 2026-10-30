@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="감사사례 검색서비스 관리자 운영 화면">
+  <title>관리자 페이지 | 감사사례 검색서비스</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="auth-pending admin-dashboard-page">
+  <header class="site-header">
+    <div class="header-inner main-header-inner">
+      <nav class="main-nav" aria-label="관리자 메뉴">
+        <span class="page-selection-label">Admin Console</span>
+        <a href="#overview">운영 현황</a>
+        <a href="#report-management">감사보고서 관리</a>
+        <a href="#user-activity">사용자 이용 현황</a>
+        <a href="index.html">사용자 화면</a>
+        <button id="logout-button" class="header-logout-button" type="button" hidden>로그아웃</button>
+      </nav>
+      <button class="theme-toggle" type="button" data-theme-toggle aria-label="다크 모드로 전환" title="다크 모드">☾</button>
+    </div>
+  </header>
+
+  <main class="page-shell admin-dashboard-shell">
+    <section class="intro compact" aria-labelledby="admin-page-title">
+      <p class="eyebrow">ADMIN CONSOLE</p>
+      <h1 id="admin-page-title">관리자 페이지</h1>
+      <p>감사보고서와 서비스 이용 현황을 한 화면에서 확인하고 관리합니다.</p>
+    </section>
+
+    <section id="overview" class="admin-section" aria-labelledby="overview-title">
+      <div class="panel-heading">
+        <div><p class="step-label">01</p><h2 id="overview-title">운영 현황</h2></div>
+      </div>
+      <div class="my-summary admin-summary">
+        <article class="summary-card"><span>등록된 감사보고서</span><strong id="admin-report-count">-</strong></article>
+        <article class="summary-card"><span>최근 검색 기록</span><strong id="admin-search-count">-</strong></article>
+        <article class="summary-card"><span>저장된 감사사례</span><strong id="admin-saved-count">-</strong></article>
+      </div>
+    </section>
+
+    <section id="report-management" class="admin-section" aria-labelledby="report-management-title">
+      <div class="panel-heading admin-section-heading">
+        <div>
+          <p class="step-label">02</p>
+          <h2 id="report-management-title">감사보고서 관리</h2>
+        </div>
+        <p>보고서를 등록하고 현재 검색 대상 목록을 관리합니다.</p>
+      </div>
+
+      <div class="upload-panel admin-nested-panel" aria-labelledby="upload-title">
+        <div class="panel-heading">
+          <div><p class="step-label">등록</p><h2 id="upload-title">보고서 등록</h2></div>
+          <span class="mock-badge">직접 입력</span>
+        </div>
+        <form id="report-form" class="report-form">
+          <div class="report-form-grid">
+            <div class="field">
+              <label for="report-date">날짜</label>
+              <input id="report-date" name="date" type="date" required>
+            </div>
+            <div class="field">
+              <label for="report-department">부서</label>
+              <input id="report-department" name="department" type="text" placeholder="예: 재무과" required>
+            </div>
+            <div class="field">
+              <label for="report-drafter">기안자</label>
+              <input id="report-drafter" name="drafter" type="text" placeholder="예: 김민준" required>
+            </div>
+            <div class="field">
+              <label for="report-audit-type">감사종류</label>
+              <input id="report-audit-type" name="auditType" type="text" placeholder="예: 특정감사" required>
+            </div>
+            <div class="field report-discipline-field">
+              <label for="report-discipline">징계양정</label>
+              <input id="report-discipline" name="discipline" type="text" placeholder="예: 주의, 경고, 견책" required>
+            </div>
+            <div class="field report-content-field">
+              <label for="report-content">내용</label>
+              <textarea id="report-content" name="content" rows="6" placeholder="감사 지적사항과 조치 내용을 입력해 주세요." required></textarea>
+              <input id="report-file" name="reportFile" type="file" accept=".hwp,.hwpx,.doc,.docx,.pdf" hidden>
+              <div class="report-file-upload">
+                <button id="upload-file-button" class="button button-secondary" type="button">감사보고서 파일 업로드</button>
+                <p>HWP, HWPX, DOC, DOCX, PDF 파일을 등록할 수 있습니다.</p>
+              </div>
+              <div id="uploaded-file" class="uploaded-file" hidden>
+                <span id="uploaded-file-name"></span>
+                <strong>업로드 완료</strong>
+              </div>
+            </div>
+          </div>
+          <div class="upload-actions">
+            <p>모든 항목을 입력하고 감사보고서 파일을 선택하면 검색 대상 목록에 반영됩니다.</p>
+            <div class="form-actions">
+              <button id="reset-form-button" class="button button-secondary" type="reset">초기화</button>
+              <button id="register-button" class="button button-primary" type="submit">감사보고서 등록</button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="registered-section admin-nested-panel" aria-labelledby="registered-title">
+        <div class="panel-heading">
+          <div><p class="step-label">목록</p><h2 id="registered-title">등록완료된 감사보고서 <span id="registered-count" class="count-pill">0건</span></h2></div>
+          <button id="delete-report-button" class="button button-secondary delete-report-button" type="button" disabled>삭제</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th class="selection-column">선택</th><th>날짜</th><th>부서</th><th>기안자</th><th>감사종류</th><th>징계양정</th><th>내용</th><th>첨부파일</th><th>등록 상태</th></tr></thead>
+            <tbody id="registered-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="user-activity" class="admin-section" aria-labelledby="user-activity-title">
+      <div class="panel-heading admin-section-heading">
+        <div><p class="step-label">03</p><h2 id="user-activity-title">사용자 이용 현황</h2></div>
+        <p>현재 권한 정책에서 조회 가능한 기록만 표시됩니다.</p>
+      </div>
+      <div class="admin-activity-grid">
+        <article class="admin-activity-card" aria-labelledby="search-activity-title">
+          <div class="panel-heading">
+            <div><h2 id="search-activity-title">최근 검색 기록</h2></div>
+            <span id="search-activity-count" class="count-pill">0건</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>사용자</th><th>검색어</th><th>방식</th><th>검색 조건</th><th>검색일</th></tr></thead>
+              <tbody id="admin-search-activity-body"></tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="admin-activity-card" aria-labelledby="saved-activity-title">
+          <div class="panel-heading">
+            <div><h2 id="saved-activity-title">저장한 감사사례</h2></div>
+            <span id="saved-activity-count" class="count-pill">0건</span>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>사용자</th><th>보고서</th><th>대상부서</th><th>감사유형</th><th>저장일</th></tr></thead>
+              <tbody id="admin-saved-activity-body"></tbody>
+            </table>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <footer><p>감사사례 검색서비스 · 관리자 페이지</p></footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-client.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/auth-session.js"></script>
+  <script src="js/admin.js"></script>
+  <script src="js/admin-dashboard.js"></script>
+</body>
+</html>
